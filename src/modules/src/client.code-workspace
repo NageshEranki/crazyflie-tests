@@ -1,0 +1,13 @@
+{
+    "folders": [
+        {
+            "path": "../../../../../ae483/crazyflie-firmware/src/modules/src"
+        },
+        {
+            "path": "../../.."
+        },
+        {
+            "path": "../../../../client"
+        }
+    ]
+}
