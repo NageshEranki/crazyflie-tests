@@ -6,9 +6,13 @@
 // An example struct to hold AE483-specific data sent from client to drone
 struct AE483Data
 {
-  float x;
-  float y;
-  float z;
+  // float x;
+  // float y;
+  // float z;
+  uint16_t m1;
+  uint16_t m2;
+  uint16_t m3;
+  uint16_t m4;
 } __attribute__((packed));
 
 void controllerAE483Init(void);

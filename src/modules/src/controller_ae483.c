@@ -5,6 +5,8 @@
 #include "param.h"
 #include "num.h"
 #include "math3d.h"
+#include "FreeRTOS.h"
+#include "task.h"
 
 // Sensor measurements
 // - tof (from the z ranger on the flow deck)
@@ -18,6 +20,15 @@ static float flow_dpixely = 0.0f;
 // An example parameter
 static bool use_observer = false;
 
+// Motor power commands -> EXPERIMENTAL
+static uint16_t i1 = 0;
+static uint16_t i2 = 0;
+static uint16_t i3 = 0;
+static uint16_t i4 = 0;
+
+// Timestamp of first packet to CF
+static uint32_t start = 0;
+static bool started = 0;
 
 void ae483UpdateWithTOF(tofMeasurement_t *tof)
 {
@@ -84,6 +95,16 @@ void ae483UpdateWithData(const struct AE483Data* data)
   //  data->z         float
   //
   // Exactly what "x", "y", and "z" mean in this context is up to you.
+  if(!started)
+  {
+    start = xTaskGetTickCount();
+    started = 1;
+  }
+
+  i1 = data->m1;
+  i2 = data->m2;
+  i3 = data->m3;
+  i4 = data->m4;
 }
 
 
@@ -106,16 +127,18 @@ void controllerAE483(control_t *control,
 {
   if (RATE_DO_EXECUTE(ATTITUDE_RATE, tick)) {
     // Whatever is in here executes at 500 Hz
+    // powerSet(m1, m2, m3, m4);
+    powerSet(10000, 0, 0, 0);
 
   }
 
-  if (RATE_DO_EXECUTE(POSITION_RATE, tick)) {
-    // Whatever is in here executes at 100 Hz
+  // if (RATE_DO_EXECUTE(POSITION_RATE, tick)) {
+  //   // Whatever is in here executes at 100 Hz
 
-  }
+  // }
 
-  // By default, we do nothing (set all motor power commands to zero)
-  powerSet(0, 0, 0, 0);
+  // // By default, we do nothing (set all motor power commands to zero)
+  // powerSet(0, 0, 0, 0);
 }
 
 //              1234567890123456789012345678 <-- max total length
@@ -123,6 +146,11 @@ void controllerAE483(control_t *control,
 LOG_GROUP_START(ae483log)
 LOG_ADD(LOG_UINT16,         num_tof,                &tof_count)
 LOG_ADD(LOG_UINT16,         num_flow,               &flow_count)
+LOG_ADD(LOG_UINT16,     i1,                      &i1)
+LOG_ADD(LOG_UINT16,     i2,                      &i2)
+LOG_ADD(LOG_UINT16,     i3,                      &i3)
+LOG_ADD(LOG_UINT16,     i4,                      &i4)
+LOG_ADD(LOG_UINT32,     start,                      &start)
 LOG_GROUP_STOP(ae483log)
 
 //                1234567890123456789012345678 <-- max total length
