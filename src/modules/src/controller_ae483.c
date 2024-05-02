@@ -66,14 +66,14 @@ static uint16_t m_4 = 0;
 // Constants
 //------------------------------
 // static float k_flow = 4.09255568f;
-static float g = 9.81f;
-static float dt = 0.002f;
+// static float g = 9.81f;
+// static float dt = 0.002f;
 // static float o_z_eq = 0.5f;
 
 void ae483UpdateWithTOF(tofMeasurement_t *tof)
 {
-  tof_distance = tof->distance;
-  tof_count++;
+  // tof_distance = tof->distance;
+  // tof_count++;
 }
 
 
