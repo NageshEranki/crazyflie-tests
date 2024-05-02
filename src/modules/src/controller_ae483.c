@@ -268,44 +268,17 @@ void controllerAE483(control_t *control,
       w_x_dot = (w_x - w_x_old)*500.0f;
       w_y_dot = (w_y - w_y_old)*500.0f;
 
-      // ------------------------------------------------------------------------------------------------------   
-      // My best controller  
-      // Controller exported from analysis notebook
-      // tau_x = 0.00441238f * (o_y - o_y_des) -0.01525499f * phi + 0.00456098f * v_y -0.00261447f * w_x;
-      // tau_y = -0.00483352f * (o_x - o_x_des) -0.01524277f * theta -0.00454801f * v_x -0.00262022f * w_y;
-      // tau_z = -0.00095512f * psi -0.00104135f * w_z;
-      // f_z = -0.58795171f * (o_z - o_z_des) -0.20269628f * v_z + 0.31392000f;
-
-
-      // For thesis: Improved
-      // tau_x = 0.00545202f * (o_y - o_y_des) -0.01958346f * phi + 0.00526425f * v_y -0.00353786f * w_x;
-      // tau_y = -0.00545202f * (o_x - o_x_des) -0.01958346f * theta -0.00526425f * v_x -0.00353786f * w_y;
-      // tau_z = -0.00122213f * psi -0.00090561f * w_z;
-      // f_z = -0.95935395f * (o_z - o_z_des) -0.71304323f * v_z + 0.31392000f;
-
-      // Same controller as above but use filtered velocity instead
-      // tau_x = 0.00545202f * (o_y - o_y_des) -0.01958346f * phi + 0.00526425f * vyf -0.00353786f * w_x;
-      // tau_y = -0.00545202f * (o_x - o_x_des) -0.01958346f * theta -0.00526425f * vxf -0.00353786f * w_y;
-      // tau_z = -0.00122213f * psi -0.00090561f * w_z;
-      // f_z = -0.95935395f * (o_z - o_z_des) -0.71304323f * vzf + 0.31392000f;
-
-      tau_x = 0.00349681f * (o_y - o_y_des) -0.01264838f * phi + 0.00338566f * v_y -0.00230242f * w_x;
-      tau_y = -0.00349681f * (o_x - o_x_des) -0.01265089f * theta -0.00338592f * v_x -0.00230337f * w_y;
+      // For thesis: Improved (as of March 28, 2024)
+      tau_x = 0.00383056f * (o_y - o_y_des) -0.01292385f * phi + 0.00354096f * v_y -0.00230436f * w_x;
+      tau_y = -0.00383056f * (o_x - o_x_des) -0.01292648f * theta -0.00354125f * v_x -0.00230533f * w_y;
       tau_z = -0.00130574f * psi -0.00097012f * w_z;
       f_z = -0.76830954f * (o_z - o_z_des) -0.58114773f * v_z + 0.32569200f;
-
-
 
       // Additional damping
       tau_x -= 0.00006f*w_x_dot;
       tau_y -= 0.00006f*w_y_dot;
       // ------------------------------------------------------------------------------------------------------
       // Mapping b/w inputs and motor commands
-      // m_1 = limitUint16( -3906250.0f * tau_x -3906250.0f * tau_y -81433224.8f * tau_z + 125000.0f * f_z );
-      // m_2 = limitUint16( -3906250.0f * tau_x + 3906250.0f * tau_y + 81433224.8f * tau_z + 125000.0f * f_z );
-      // m_3 = limitUint16( 3906250.0f * tau_x + 3906250.0f * tau_y -81433224.8f * tau_z + 125000.0f * f_z );
-      // m_4 = limitUint16( 3906250.0f * tau_x -3906250.0f * tau_y + 81433224.8f * tau_z + 125000.0f * f_z );
-
       m_1 = limitUint16( -4311242.0f * tau_x -4311242.0f * tau_y -28468908.0f * tau_z + 142271.0f * f_z );
       m_2 = limitUint16( -4311242.0f * tau_x + 4311242.0f * tau_y + 28468908.0f * tau_z + 142271.0f * f_z );
       m_3 = limitUint16( 4311242.0f * tau_x + 4311242.0f * tau_y -28468908.0f * tau_z + 142271.0f * f_z );
