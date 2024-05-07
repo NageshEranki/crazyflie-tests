@@ -3,7 +3,7 @@
 
 #include "stabilizer_types.h"
 
-// An example struct to hold AE483-specific data sent from client to drone
+// Structure to hold encoded measurements
 struct AE483Data
 {
   uint64_t qi;
