@@ -30,35 +30,46 @@
 
 #include "debug.h"
 
+#include "FreeRTOS.h"
+#include "task.h"
+
 #define DEBUG_MODULE "HELLOWORLD"
 
 struct testPacketRX {
-  float x;
-  float y;
-  float z;
+  // float x;
+  // float y;
+  // float z;
+
+  uint8_t send;
 } __attribute__((packed));
 
-struct testPacketTX {
-  float sum;
-} __attribute__((packed));
+// struct testPacketTX {
+//   float sum;
+// } __attribute__((packed));
+
+
+static float x = 999.0f;
+
 
 void appMain()
 {
   DEBUG_PRINT("Waiting for activation ...\n");
 
-  struct testPacketRX rxPacket;
-  struct testPacketTX txPacket;
+  // struct testPacketRX rxPacket;
+  // struct testPacketTX txPacket;
 
   while(1) {
-    if (appchannelReceiveDataPacket(&rxPacket, sizeof(rxPacket), APPCHANNEL_WAIT_FOREVER)) {
+    // if (appchannelReceiveDataPacket(&rxPacket, sizeof(rxPacket), APPCHANNEL_WAIT_FOREVER)) {
 
-      DEBUG_PRINT("App channel received x: %f, y: %f, z: %f\n", (double)rxPacket.x, (double)rxPacket.y, (double)rxPacket.z);
+    //   DEBUG_PRINT("App channel received x: %f, y: %f, z: %f\n", (double)rxPacket.x, (double)rxPacket.y, (double)rxPacket.z);
 
-      txPacket.sum = rxPacket.x;
-      txPacket.sum += rxPacket.y;
-      txPacket.sum += rxPacket.z;
+    //   txPacket.sum = rxPacket.x;
+    //   txPacket.sum += rxPacket.y;
+    //   txPacket.sum += rxPacket.z;
 
-      appchannelSendDataPacketBlock(&txPacket, sizeof(txPacket));
-    }
+    //   appchannelSendDataPacketBlock(&txPacket, sizeof(txPacket));
+    // }
+    vTaskDelay(M2T(2000));
+    DEBUG_PRINT(" Does nothing: x=%f\n", (double)x);
   }
 }

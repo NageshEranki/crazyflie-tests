@@ -89,8 +89,8 @@ class AppchannelTest:
 
     def _test_appchannel(self):
         for i in range(10):
-            (x, y, z) = (i, i+1, i+2)
-            data = struct.pack("<fff", x, y, z)
+            # (x, y, z) = (i, i+1, i+2)
+            # data = struct.pack("<fff", x, y, z)
             self._cf.appchannel.send_packet(data)
             print(f"Sent x: {x}, y: {y}, z: {z}")
 
