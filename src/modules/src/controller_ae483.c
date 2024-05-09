@@ -6,6 +6,36 @@
 #include "num.h"
 #include "math3d.h"
 
+// Decoder parameters
+//------------------------------
+// Ndiv = number of intervals in
+//        each dimension
+// p = Dimension of output of 
+//     the mocap system
+// E0 = State bound
+//------------------------------
+#define Ndiv 3
+#define p 6
+
+
+static float E0 = 1.5f;
+
+static float yc[p] = {-1.2f, 0.8f, 0.1f, -2.1f, 0.5f, 2.2f};
+
+void decoder(const int N)
+{
+    const float delta = 2*E0/Ndiv;
+    float yhat[p] = {0.0f};
+    int nd = 1;
+    for(int i=0; i<p; i++)
+    {
+        //printf("%d\n",(N/(nd))%Ndiv);
+        float y0i = -E0 + yc[i] + delta/2.0f;
+        yhat[i] = y0i + ((N/nd)%Ndiv)*delta;
+        nd *= Ndiv;
+    }
+}
+
 // Parameters
 static bool use_observer = false;
 static bool reset_observer = false;
@@ -105,6 +135,12 @@ void ae483UpdateWithPose(poseMeasurement_t *meas)
   //  meas->quat.z    float     z component of quaternion from external orientation measurement
   //  meas->quat.w    float     w component of quaternion from external orientation measurement
 }
+
+// The bounding box around the current output measurement.
+void updateBoundingBox()
+{
+}
+
 
 void ae483UpdateWithData(const struct AE483Data* data)
 {
