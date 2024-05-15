@@ -3,12 +3,10 @@
 
 #include "stabilizer_types.h"
 
-// An example struct to hold AE483-specific data sent from client to drone
+// Structure to hold encoded measurements
 struct AE483Data
 {
-  float x;
-  float y;
-  float z;
+  uint64_t qi;
 } __attribute__((packed));
 
 void controllerAE483Init(void);

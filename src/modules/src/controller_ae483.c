@@ -6,16 +6,37 @@
 #include "num.h"
 #include "math3d.h"
 
-// Sensor measurements
-// - tof (from the z ranger on the flow deck)
-static uint16_t tof_count = 0;
-static float tof_distance = 0.0f;
-// - flow (from the optical flow sensor on the flow deck)
-static uint16_t flow_count = 0;
-static float flow_dpixelx = 0.0f;
-static float flow_dpixely = 0.0f;
+// Decoder parameters
+//------------------------------
+// Ndiv = number of intervals in
+//        each dimension
+// p = Dimension of output of 
+//     the mocap system
+// E0 = State bound
+//------------------------------
+#define Ndiv 3
+#define p 6
 
-// // Parameters
+
+static float E0 = 1.5f;
+
+static float yc[p] = {-1.2f, 0.8f, 0.1f, -2.1f, 0.5f, 2.2f};
+
+void decoder(const int N)
+{
+    const float delta = 2*E0/Ndiv;
+    float yhat[p] = {0.0f};
+    int nd = 1;
+    for(int i=0; i<p; i++)
+    {
+        //printf("%d\n",(N/(nd))%Ndiv);
+        float y0i = -E0 + yc[i] + delta/2.0f;
+        yhat[i] = y0i + ((N/nd)%Ndiv)*delta;
+        nd *= Ndiv;
+    }
+}
+
+// Parameters
 static bool use_observer = false;
 static bool reset_observer = false;
 
@@ -27,27 +48,11 @@ static float o_x = 0.0f;
 static float o_y = 0.0f;
 static float o_z = 0.0f;
 //------------------------------
-// Position from Qualisys
-//------------------------------
-// static float o_x_qtm = 0.0f;
-// static float o_y_qtm = 0.0f;
-// static float o_z_qtm = 0.0f;
-// static float o_x_qtm_old = 0.0f;
-// static float o_y_qtm_old = 0.0f;
-// static float o_z_qtm_old = 0.0f;
-//------------------------------
 // Attitude
 //------------------------------
 static float psi = 0.0f;
 static float theta = 0.0f;
 static float phi = 0.0f;
-//------------------------------
-// Quaternion from Qualisys
-//------------------------------
-// static float qx_qtm = 0.0f;
-// static float qy_qtm = 0.0f;
-// static float qz_qtm = 0.0f;
-// static float qw_qtm = 0.0f;
 //------------------------------
 // Velocity
 //------------------------------
@@ -87,52 +92,20 @@ static uint16_t m_1 = 0;
 static uint16_t m_2 = 0;
 static uint16_t m_3 = 0;
 static uint16_t m_4 = 0;
-//------------------------------
-// Measurements
-//------------------------------
-static float n_x = 0.0f;
-static float n_y = 0.0f;
-static float r = 0.0f;
-static float a_z = 0.0f;
-//------------------------------
-// Constants
-//------------------------------
-// static float k_flow = 4.09255568f;
-static float g = 9.81f;
-static float dt = 0.002f;
-// static float o_z_eq = 0.5f;
-//------------------------------
-// Measurement errors
-//------------------------------
-static float n_x_err = 0.0f;
-static float n_y_err = 0.0f;
-static float r_err = 0.0f;
-//------------------------------
 
 void ae483UpdateWithTOF(tofMeasurement_t *tof)
 {
-  tof_distance = tof->distance;
-  tof_count++;
+
 }
 
 void ae483UpdateWithFlow(flowMeasurement_t *flow)
 {
-  flow_dpixelx = flow->dpixelx;
-  flow_dpixely = flow->dpixely;
-  flow_count++;
+
 }
 
 void ae483UpdateWithDistance(distanceMeasurement_t *meas)
 {
-  // If you have a loco positioning deck, this function will be called
-  // each time a distance measurement is available. You will have to write
-  // code to handle these measurements. These data are available:
-  //
-  //  meas->anchorId  uint8_t   id of anchor with respect to which distance was measured
-  //  meas->x         float     x position of this anchor
-  //  meas->y         float     y position of this anchor
-  //  meas->z         float     z position of this anchor
-  //  meas->distance  float     the measured distance
+
 }
 
 void ae483UpdateWithPosition(positionMeasurement_t *meas)
@@ -163,17 +136,15 @@ void ae483UpdateWithPose(poseMeasurement_t *meas)
   //  meas->quat.w    float     w component of quaternion from external orientation measurement
 }
 
+// The bounding box around the current output measurement.
+void updateBoundingBox()
+{
+}
+
+
 void ae483UpdateWithData(const struct AE483Data* data)
 {
-  // This function will be called each time AE483-specific data are sent
-  // from the client to the drone. You will have to write code to handle
-  // these data. For the example AE483Data struct, these data are:
-  //
-  //  data->x         float
-  //  data->y         float
-  //  data->z         float
-  //
-  // Exactly what "x", "y", and "z" mean in this context is up to you.
+
 }
 
 
@@ -206,10 +177,7 @@ void controllerAE483(control_t *control,
     w_x = radians(sensors->gyro.x);
     w_y = radians(sensors->gyro.y);
     w_z = radians(sensors->gyro.z);
-    a_z = g * sensors->acc.z;
-    n_x = flow_dpixelx;
-    n_y = flow_dpixely;
-    r = tof_distance;
+
 
     if (reset_observer) {
       o_x = 0.0f;
@@ -227,24 +195,6 @@ void controllerAE483(control_t *control,
     // State estimates
     if (use_observer) {
     
-
-      // FIXME: your code goes here
-      n_x_err = -n_x + 8.18511136F*v_x - 4.09255568F*w_y;
-      n_y_err = -n_y + 8.18511136F*v_y + 4.09255568F*w_x;
-      r_err   = 1.0F*o_z - r;
-
-      o_x   += dt * (v_x);
-      o_y   += dt * (v_y);
-      o_z   += dt * (-22.3215143F*r_err + 1.0F*v_z);
-      psi   += dt * (w_z);
-      theta += dt * (-0.0137195122F*n_x_err + 1.0F*w_y);
-      phi   += dt * (0.0128755365F*n_y_err + 1.0F*w_x);
-      v_x   += dt * (-0.22526723F*n_x_err + 9.81F*theta);
-      v_y   += dt * (-0.218658417F*n_y_err - 9.81F*phi);
-      v_z   += dt * (1.0F*a_z - 1.0F*g - 96.0F*r_err);
-
-      // Update estimates
-      // FIXME: your code goes here
       
     } else {
       o_x = state->position.x;
@@ -297,27 +247,15 @@ void controllerAE483(control_t *control,
 //              1234567890123456789012345678 <-- max total length
 //              group   .name
 LOG_GROUP_START(ae483log)
-LOG_ADD(LOG_UINT16,         num_tof,                &tof_count)
-LOG_ADD(LOG_UINT16,         num_flow,               &flow_count)
 LOG_ADD(LOG_FLOAT,          o_x,                    &o_x)
 LOG_ADD(LOG_FLOAT,          o_y,                    &o_y)
 LOG_ADD(LOG_FLOAT,          o_z,                    &o_z)
-// LOG_ADD(LOG_FLOAT,          o_x_qtm,                &o_x_qtm)
-// LOG_ADD(LOG_FLOAT,          o_y_qtm,                &o_y_qtm)
-// LOG_ADD(LOG_FLOAT,          o_z_qtm,                &o_z_qtm)
-// LOG_ADD(LOG_FLOAT,          qx_qtm,                 &qx_qtm)
-// LOG_ADD(LOG_FLOAT,          qy_qtm,                 &qy_qtm)
-// LOG_ADD(LOG_FLOAT,          qz_qtm,                 &qz_qtm)
-// LOG_ADD(LOG_FLOAT,          qw_qtm,                 &qw_qtm)
 LOG_ADD(LOG_FLOAT,          psi,                    &psi)
 LOG_ADD(LOG_FLOAT,          theta,                  &theta)
 LOG_ADD(LOG_FLOAT,          phi,                    &phi)
 LOG_ADD(LOG_FLOAT,          v_x,                    &v_x)
 LOG_ADD(LOG_FLOAT,          v_y,                    &v_y)
 LOG_ADD(LOG_FLOAT,          v_z,                    &v_z)
-// LOG_ADD(LOG_FLOAT,          vxf,                    &vxf)
-// LOG_ADD(LOG_FLOAT,          vyf,                    &vyf)
-// LOG_ADD(LOG_FLOAT,          vzf,                    &vzf)
 LOG_ADD(LOG_FLOAT,          w_x,                    &w_x)
 LOG_ADD(LOG_FLOAT,          w_y,                    &w_y)
 LOG_ADD(LOG_FLOAT,          w_z,                    &w_z)
@@ -332,10 +270,6 @@ LOG_ADD(LOG_UINT16,         m_1,                    &m_1)
 LOG_ADD(LOG_UINT16,         m_2,                    &m_2)
 LOG_ADD(LOG_UINT16,         m_3,                    &m_3)
 LOG_ADD(LOG_UINT16,         m_4,                    &m_4)
-LOG_ADD(LOG_FLOAT,          n_x,                    &n_x)
-LOG_ADD(LOG_FLOAT,          n_y,                    &n_y)
-LOG_ADD(LOG_FLOAT,          r,                      &r)
-LOG_ADD(LOG_FLOAT,          a_z,                    &a_z)
 LOG_GROUP_STOP(ae483log)
 
 //                1234567890123456789012345678 <-- max total length
